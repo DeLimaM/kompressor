@@ -4,6 +4,7 @@
 #include "cli.h"
 #include "io.h"
 #include "bpe.h"
+#include "format.h"
 
 int main(int argc, char **argv)
 {
@@ -34,6 +35,14 @@ int main(int argc, char **argv)
             printf("  Rule %d: 0x%02X -> (0x%02X, 0x%02X)\n",
                    i, result->rules[i].symbol,
                    result->rules[i].pair[0], result->rules[i].pair[1]);
+        }
+
+        if (write_bpe(args.output_path, result, size) != 0)
+        {
+            fprintf(stderr, "Failed to write output file\n");
+            bpe_free(result);
+            free(data);
+            return 1;
         }
 
         bpe_free(result);
