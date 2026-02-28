@@ -1,0 +1,4 @@
+- implement dynamic allocation where possible to avoid allocating the worst case size
+- add check on malloc returns
+- multithreading
+- recursive bpe

@@ -88,7 +88,6 @@ BPEResult *bpe_compress(const uint8_t *data, size_t size)
         if (count < 2)
             break;
 
-        /* Find a free symbol (not used in data AND not reserved by a rule) */
         int sym = -1;
         for (int s = 0; s < MAX_RULES; s++)
         {
@@ -124,9 +123,50 @@ BPEResult *bpe_compress(const uint8_t *data, size_t size)
 
 uint8_t *bpe_decompress(const BPEResult *compressed, size_t *out_size)
 {
-    (void)compressed;
-    (void)out_size;
-    return NULL;
+    int is_rule[MAX_RULES];
+    uint8_t rule_pair[MAX_RULES][2];
+    memset(is_rule, 0, sizeof(is_rule));
+
+    for (int i = 0; i < compressed->rule_count; i++)
+    {
+        uint8_t sym = compressed->rules[i].symbol;
+        is_rule[sym] = 1;
+        rule_pair[sym][0] = compressed->rules[i].pair[0];
+        rule_pair[sym][1] = compressed->rules[i].pair[1];
+    }
+
+    size_t current_size = compressed->size;
+    uint8_t *current_data = malloc(current_size);
+    memcpy(current_data, compressed->data, current_size);
+    for (int i = compressed->rule_count - 1; i >= 0; i--)
+    {
+        uint8_t sym = compressed->rules[i].symbol;
+        if (is_rule[sym])
+        {
+
+            size_t new_size = current_size + current_size;
+            uint8_t *new_data = malloc(new_size);
+            size_t j = 0;
+            for (size_t k = 0; k < current_size; k++)
+            {
+                if (current_data[k] == sym)
+                {
+                    new_data[j++] = rule_pair[sym][0];
+                    new_data[j++] = rule_pair[sym][1];
+                }
+                else
+                {
+                    new_data[j++] = current_data[k];
+                }
+            }
+            free(current_data);
+            current_data = new_data;
+            current_size = j;
+        }
+    }
+
+    *out_size = current_size;
+    return current_data;
 }
 
 void bpe_free(BPEResult *result)

@@ -47,6 +47,48 @@ int main(int argc, char **argv)
 
         bpe_free(result);
     }
+    else if (args.mode == MODE_DECOMPRESS)
+    {
+        BPEResult result;
+        size_t original_size;
+        if (read_bpe(args.input_path, &result, &original_size) != 0)
+        {
+            fprintf(stderr, "Failed to read input file\n");
+            free(data);
+            return 1;
+        }
+
+        printf("Compressed: %zu bytes\n", result.size);
+        printf("Original size: %zu bytes\n", original_size);
+        printf("Rules: %d\n", result.rule_count);
+
+        uint8_t *decompressed = bpe_decompress(&result, &size);
+        if (!decompressed)
+        {
+            fprintf(stderr, "Decompression failed\n");
+            bpe_free(&result);
+            free(data);
+            return 1;
+        }
+
+        if (write_file(args.output_path, decompressed, size) != 0)
+        {
+            fprintf(stderr, "Failed to write output file\n");
+            free(decompressed);
+            bpe_free(&result);
+            free(data);
+            return 1;
+        }
+
+        free(decompressed);
+        bpe_free(&result);
+    }
+    else
+    {
+        fprintf(stderr, "No mode specified\n");
+        free(data);
+        return 1;
+    }
 
     free(data);
     return 0;
