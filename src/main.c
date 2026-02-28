@@ -3,29 +3,42 @@
 
 #include "cli.h"
 #include "io.h"
+#include "bpe.h"
 
 int main(int argc, char **argv)
 {
     Args args = {0};
-    parse_args(argc, argv, &args);
-    printf("Mode: %d\n", args.mode);
-    printf("Input Path: %s\n", args.input_path);
-    printf("Output Path: %s\n", args.output_path);
-    printf("Verbose: %d\n", args.verbose);
+    if (parse_args(argc, argv, &args) != 0)
+        return 1;
 
-    uint8_t *data;
     size_t size;
-    data = read_file(args.input_path, &size);
-    if (data)
+    uint8_t *data = read_file(args.input_path, &size);
+    if (!data)
+        return 1;
+
+    if (args.mode == MODE_COMPRESS)
     {
-        printf("Read %zu bytes from %s\n", size, args.input_path);
-        free(data);
+        printf("Input: %zu bytes\n", size);
+        BPEResult *result = bpe_compress(data, size);
+        if (!result)
+        {
+            fprintf(stderr, "Compression failed\n");
+            free(data);
+            return 1;
+        }
+        printf("Compressed: %zu bytes (%d rules)\n", result->size, result->rule_count);
+        printf("Ratio: %.1f%%\n", 100.0 * (double)result->size / (double)size);
+
+        for (int i = 0; i < result->rule_count; i++)
+        {
+            printf("  Rule %d: 0x%02X -> (0x%02X, 0x%02X)\n",
+                   i, result->rules[i].symbol,
+                   result->rules[i].pair[0], result->rules[i].pair[1]);
+        }
+
+        bpe_free(result);
     }
 
-    if (write_file(args.output_path, data, size) == 0)
-    {
-        printf("Wrote %zu bytes to %s\n", size, args.output_path);
-    }
-
+    free(data);
     return 0;
 }
