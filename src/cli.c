@@ -1,7 +1,10 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "cli.h"
+
+int verbose_enabled = 0;
 
 int parse_args(int argc, char **argv, Args *args)
 {
@@ -53,4 +56,20 @@ void print_usage(void)
     printf("  decompress Decompress the input file\n");
     printf("Options:\n");
     printf("  -v, --verbose  Enable verbose output\n");
+}
+
+void set_verbose(int verbose)
+{
+    verbose_enabled = verbose;
+}
+
+void verbose_printf(const char *format, ...)
+{
+    if (verbose_enabled)
+    {
+        va_list args;
+        va_start(args, format);
+        vprintf(format, args);
+        va_end(args);
+    }
 }

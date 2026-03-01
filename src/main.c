@@ -12,6 +12,8 @@ int main(int argc, char **argv)
     if (parse_args(argc, argv, &args) != 0)
         return 1;
 
+    set_verbose(args.verbose);
+
     size_t size;
     uint8_t *data = read_file(args.input_path, &size);
     if (!data)
@@ -19,7 +21,7 @@ int main(int argc, char **argv)
 
     if (args.mode == MODE_COMPRESS)
     {
-        printf("Input: %zu bytes\n", size);
+        verbose_printf("Input: %zu bytes\n", size);
         BPEResult *result = bpe_compress(data, size);
         if (!result)
         {
@@ -27,14 +29,14 @@ int main(int argc, char **argv)
             free(data);
             return 1;
         }
-        printf("Compressed: %zu bytes (%d rules)\n", result->size, result->rule_count);
-        printf("Ratio: %.1f%%\n", 100.0 * (double)result->size / (double)size);
+        verbose_printf("Compressed: %zu bytes (%d rules)\n", result->size, result->rule_count);
+        verbose_printf("Ratio: %.1f%%\n", 100.0 * (double)result->size / (double)size);
 
         for (int i = 0; i < result->rule_count; i++)
         {
-            printf("  Rule %d: 0x%02X -> (0x%02X, 0x%02X)\n",
-                   i, result->rules[i].symbol,
-                   result->rules[i].pair[0], result->rules[i].pair[1]);
+            verbose_printf("  Rule %d: 0x%02X -> (0x%02X, 0x%02X)\n",
+                           i, result->rules[i].symbol,
+                           result->rules[i].pair[0], result->rules[i].pair[1]);
         }
 
         if (write_bpe(args.output_path, result, size) != 0)
@@ -58,9 +60,9 @@ int main(int argc, char **argv)
             return 1;
         }
 
-        printf("Compressed: %zu bytes\n", result.size);
-        printf("Original size: %zu bytes\n", original_size);
-        printf("Rules: %d\n", result.rule_count);
+        verbose_printf("Compressed: %zu bytes\n", result.size);
+        verbose_printf("Original size: %zu bytes\n", original_size);
+        verbose_printf("Rules: %d\n", result.rule_count);
 
         uint8_t *decompressed = bpe_decompress(&result, &size);
         if (!decompressed)
@@ -89,6 +91,8 @@ int main(int argc, char **argv)
         free(data);
         return 1;
     }
+
+    printf("Done\n");
 
     free(data);
     return 0;
