@@ -72,7 +72,15 @@ BPEResult *bpe_compress(const uint8_t *data, size_t size)
 
     int used[MAX_RULES];
     int reserved[MAX_RULES];
-    int pair_counts[MAX_RULES][MAX_RULES];
+    int (*pair_counts)[MAX_RULES] = malloc(MAX_RULES * MAX_RULES * sizeof(int));
+    if (!pair_counts)
+    {
+        free(temp_data);
+        free(result);
+        return NULL;
+    }
+
+    BPERule temp_rules[MAX_RULES];
     size_t current_size = size;
     int rule_count = 0;
 
@@ -101,15 +109,27 @@ BPEResult *bpe_compress(const uint8_t *data, size_t size)
             break;
 
         reserved[sym] = 1;
-        result->rules[rule_count] = (BPERule){.symbol = (uint8_t)sym, .pair = {a, b}};
+        temp_rules[rule_count] = (BPERule){.symbol = (uint8_t)sym, .pair = {a, b}};
         rule_count++;
         current_size = replace_pair(temp_data, current_size, a, b, (uint8_t)sym);
     }
 
+    free(pair_counts);
+
     result->rule_count = rule_count;
+    result->rules = malloc(rule_count * sizeof(BPERule));
+    if (!result->rules)
+    {
+        free(temp_data);
+        free(result);
+        return NULL;
+    }
+    memcpy(result->rules, temp_rules, rule_count * sizeof(BPERule));
+
     result->data = malloc(current_size);
     if (!result->data)
     {
+        free(result->rules);
         free(temp_data);
         free(result);
         return NULL;
@@ -144,7 +164,11 @@ uint8_t *bpe_decompress(const BPEResult *compressed, size_t *out_size)
         if (is_rule[sym])
         {
 
-            size_t new_size = current_size + current_size;
+            size_t sym_count = 0;
+            for (size_t c = 0; c < current_size; c++)
+                if (current_data[c] == sym)
+                    sym_count++;
+            size_t new_size = current_size + sym_count;
             uint8_t *new_data = malloc(new_size);
             size_t j = 0;
             for (size_t k = 0; k < current_size; k++)
@@ -171,5 +195,6 @@ uint8_t *bpe_decompress(const BPEResult *compressed, size_t *out_size)
 
 void bpe_free(BPEResult *result)
 {
+    free(result->rules);
     free(result->data);
 }

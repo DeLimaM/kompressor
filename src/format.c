@@ -57,6 +57,12 @@ int read_bpe(const char *path, BPEResult *result, size_t *original_size)
     uint64_t compressed_sz = header.fields.compressed_size;
 
     result->rule_count = rule_count;
+    result->rules = malloc(rule_count * sizeof(BPERule));
+    if (!result->rules)
+    {
+        free(data);
+        return -1;
+    }
     memcpy(result->rules, data + BPE_HEADER_SIZE, rule_count * sizeof(BPERule));
     result->data = malloc(compressed_sz);
     memcpy(result->data, data + BPE_HEADER_SIZE + rule_count * sizeof(BPERule), compressed_sz);

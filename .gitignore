@@ -1,3 +1,4 @@
 build
-100m.txt
-out.bpe
+pi-100m.txt
+compressed.bpe
+decompressed.txt

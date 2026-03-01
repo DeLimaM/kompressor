@@ -6,13 +6,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct {
+typedef struct
+{
   uint8_t symbol;
   uint8_t pair[2];
 } BPERule;
 
-typedef struct {
-  BPERule rules[MAX_RULES];
+typedef struct
+{
+  BPERule *rules;
   int rule_count;
   uint8_t *data;
   size_t size;
